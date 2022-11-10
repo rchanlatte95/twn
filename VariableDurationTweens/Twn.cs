@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-public static unsafe class CDtwn // "CD" -> Constant Duration
+public static unsafe class Twn
 {
     #region Set Up
 
@@ -56,13 +56,15 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
         [FieldOffset(3)] public byte ID;
     }
 
-    // Basic tween structure for tweens that have a constant duration.
+    // Basic tween structure for tweens that have a variable duration.
     [StructLayout(LayoutKind.Sequential)]
-    public struct constDurTwn // 16 bytes in size
+    public struct twn // 24 bytes in size
     {
         public float dt;
         public float strtVal;
         public float dist;
+        public float dur;
+        public float invDur;
         public state state;
     }
 
@@ -72,14 +74,12 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
 
     #endregion
 
-    public const float TWN_DUR = 0.404508f; // ϕ/8 = golden ratio divided by eight
-    public const float INV_TWN_DUR = 1.0f / TWN_DUR; // 8/ϕ = eight divided by the golden ratio
     public const int MAX_TWN_CT = 16;
     public static int reservedTwns = 0;
     public static int currActiveTwns = 0;
 
     public static int[] executingTwnIDs = new int[MAX_TWN_CT];
-    public static constDurTwn[] pool = new constDurTwn[MAX_TWN_CT];
+    public static twn[] pool = new twn[MAX_TWN_CT];
     public static Action<float>[] duringFuncs = new Action<float>[MAX_TWN_CT];
     public static Action[] doneFuncs = new Action[MAX_TWN_CT];
 
@@ -87,7 +87,7 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
     // Will stop execution of a currently running tween.
     public static void FlushPool(bool stopExe = false)
     {
-        if(stopExe == false)
+        if (stopExe == false)
         {
             for (int i = 0; i < MAX_TWN_CT; ++i)
             {
@@ -110,7 +110,7 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
                     pool[i].state.RESERVED = FALSE;
                 }
             }
-            
+
             reservedTwns = 0;
         }
     }
@@ -153,7 +153,7 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
     // Returns the integer index that is used to access that same pool
     // 
     // A return value of -1 indicates that reservation failed.
-    public static int ResInit(float start, float end, Action onComplete, Action<float> during, TwnFunc twnFunc = TwnFunc.BEZIER)
+    public static int ResInit(float start, float end, float dur, Action onComplete, Action<float> during, TwnFunc twnFunc = TwnFunc.BEZIER)
     {
         if (reservedTwns < MAX_TWN_CT)
         {
@@ -166,6 +166,8 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
                     pool[i].strtVal = start;
                     pool[i].dist = end - start;
                     pool[i].state.TF = twnFunc;
+                    pool[i].dur = dur;
+                    pool[i].invDur = 1.0f / dur;
 
                     duringFuncs[i] = during;
                     doneFuncs[i] = onComplete;
@@ -179,11 +181,13 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
     }
 
     // Initializes a reserved tween. Needs to be called before you use your tween for the first time.
-    public static void Init(int id, float start, float end, Action onComplete, Action<float> during, TwnFunc twnFunc = TwnFunc.BEZIER)
+    public static void Init(int id, float start, float end, float dur, Action onComplete, Action<float> during, TwnFunc twnFunc = TwnFunc.BEZIER)
     {
         pool[id].strtVal = start;
         pool[id].dist = end - start;
         pool[id].state.TF = twnFunc;
+        pool[id].dur = dur;
+        pool[id].invDur = 1.0f / dur;
 
         duringFuncs[id] = during;
         doneFuncs[id] = onComplete;
@@ -192,11 +196,13 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
     // TODO(RYAN): Update this to set animated tween to the front of active/animating tween queue
     // 
     // Start executing tween at id.
-    public static void Start(int id, float start, float end)
+    public static void Start(int id, float start, float end, float dur)
     {
         pool[id].dt = 0.0f;
         pool[id].strtVal = start;
         pool[id].dist = end - start;
+        pool[id].dur = dur;
+        pool[id].invDur = 1.0f / dur;
 
         if (pool[id].state.RUNNING == FALSE)
         {
@@ -234,7 +240,7 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
     }
 
     // Restart a tween without modifying any other properties or values.
-    public static void Restart (int id)
+    public static void Restart(int id)
     {
         pool[id].dt = 0.0f;
         pool[id].state.RUNNING = TRUE;
@@ -249,8 +255,8 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
         pool[id].dist = t - pool[id].strtVal;
     }
 
-    // Flips the starting and ending point of the tween and then starts the tween. Useful for tweens that oscillate
-    // between two different values.
+    // Flips the starting and ending point of the tween and then starts the tween.
+    // Useful for tweens that oscillate between two different values.
     public static void StartFlip(int id)
     {
         float t = pool[id].strtVal;
@@ -288,9 +294,9 @@ public static unsafe class CDtwn // "CD" -> Constant Duration
                     //Debug.Log("Not Taken");
                     --twns2Update;
                     pool[i].dt += dt;
-                    if (pool[i].dt < TWN_DUR)
+                    if (pool[i].dt < pool[i].dur)
                     {
-                        t = pool[i].dt * INV_TWN_DUR;
+                        t = pool[i].dt * pool[i].invDur;
 
                         switch (pool[i].state.TF)
                         {
