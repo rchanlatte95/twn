@@ -6,3 +6,9 @@ You can choose single files that contain all the code you need to run the tween 
 
 ## Double File Libraries
 You can choose two files that contain all the code you need to run the tween library of choice. One of the files extracts common structures and constants between each single file library to condense things. The second file is the same as the single file libraries without the structure or constant definitions.
+
+## Performance compared to other tween libraries
+(TODO_RYAN_2022-11-10)
+
+## Memory footprint compared to other tween libraries
+(TODO_RYAN_2022-11-10)
