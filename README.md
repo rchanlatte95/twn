@@ -4,7 +4,7 @@ Tween libs with special effort put toward simplicity, conciseness, upfront memor
 ## Usage
 You can use either single/double file entries. If you intend on using multiple tween libraries, I would suggest using the double file entry and only keeping one utl file. This way, multiple twn classes can leverage those structures/variables.
 
-![Watch the video](https://raw.githubusercontent.com/rchanlatte95/twn/main/showcase_vids/unity_showcase.mp4)
+https://user-images.githubusercontent.com/113424043/201109417-784cdc27-e21e-455d-9921-cdfbb8a36c18.mp4
 
 ### Single File Libraries
 You can choose single files that contain all the code you need to run the tween library of choice. These are self contained and have less than 500 sloc per file. They have custom structures, enums, and constants to aid in their execution.
