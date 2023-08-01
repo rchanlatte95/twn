@@ -266,7 +266,7 @@ public static class Twn
 
         pool[activeTwns].dt = 0f;
         pool[activeTwns].state.RUNNING = BOOL.TRUE;
-        t.id = activeTwns;
+        t.id = activeTwns++;
     }
 
     public static void Stop(int id, bool exeOnComplete = true)

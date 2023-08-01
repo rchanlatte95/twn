@@ -67,7 +67,7 @@ public static class CDtwn // "CD" -> Constant Duration
             pool[activeTwns].state.RUNNING = BOOL.TRUE;
         }
 
-        cdt.id = activeTwns;
+        cdt.id = activeTwns++;
     }
 
     // Stops Tween from executing.
@@ -288,8 +288,6 @@ public static class CDtwn // "CD" -> Constant Duration
         {
             cdt.during(cdt.strtVal + cdt.dist);
             cdt.state.RUNNING = BOOL.FALSE;
-            --activeTwns;
-
             cdt.onComplete?.Invoke();
         }
     }
